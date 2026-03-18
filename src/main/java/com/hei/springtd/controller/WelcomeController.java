@@ -8,8 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class WelcomeController {
 
     @GetMapping("/welcome")
-    public String welcome(@RequestParam(value = "name", required = false, defaultValue = "VIDE") String name) {
-        System.out.println("=== NOM RECU : " + name + " ===");
+    public String welcome(@RequestParam(value = "name") String name) {
         return "Welcome <" + name + ">";
     }
 }

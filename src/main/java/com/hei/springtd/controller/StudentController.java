@@ -13,13 +13,15 @@ public class StudentController {
     private static List<Student> students = new ArrayList<>();
 
     @PostMapping("/students")
-    public List<Student> addStudents(@RequestBody List<Student> newStudents) {
+    public String addStudents(@RequestBody List<Student> newStudents) {
         students.addAll(newStudents);
-        return students;
+        return students.stream()
+                .map(s -> s.getFirstName() + " " + s.getLastName())
+                .collect(Collectors.joining(", "));
     }
 
     @GetMapping("/students")
-    public String getStudents(@RequestHeader("Accept") String accept) {
+    public String getStudents(@RequestHeader(value = "Accept") String accept) {
         if (accept.equals("text/plain")) {
             return students.stream()
                     .map(s -> s.getFirstName() + " " + s.getLastName())
