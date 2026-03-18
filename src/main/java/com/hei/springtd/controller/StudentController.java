@@ -14,10 +14,13 @@ public class StudentController {
     private static List<Student> students = new ArrayList<>();
 
     @PostMapping("/students")
-    public ResponseEntity<?> addStudents(@RequestBody List<Student> newStudents) {
+    public ResponseEntity<String> addStudents(@RequestBody List<Student> newStudents) {
         try {
             students.addAll(newStudents);
-            return ResponseEntity.status(HttpStatus.CREATED).body(students);
+            String names = students.stream()
+                    .map(s -> s.getFirstName() + " " + s.getLastName())
+                    .collect(Collectors.joining(", "));
+            return ResponseEntity.status(HttpStatus.CREATED).body(names);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Erreur lors du traitement");
