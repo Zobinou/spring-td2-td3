@@ -1,60 +1,54 @@
 package com.hei.springtd.controller;
 
-import com.hei.springtd.entity.Student;
-import org.springframework.http.*;
+import com.hei.springtd.exception.BadRequestException;
+import com.hei.springtd.model.Student;
+import com.hei.springtd.service.StudentService;
+import com.hei.springtd.validator.StudentValidator;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class StudentController {
 
-    private static List<Student> students = new ArrayList<>();
+    private final StudentValidator studentValidator;
+    private final StudentService studentService;
 
-    @PostMapping("/students")
-    public ResponseEntity<String> addStudents(@RequestBody List<Student> newStudents) {
-        try {
-            students.addAll(newStudents);
-            String names = students.stream()
-                    .map(s -> s.getFirstName() + " " + s.getLastName())
-                    .collect(Collectors.joining(", "));
-            return ResponseEntity.status(HttpStatus.CREATED).body(names);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors du traitement");
-        }
+    public StudentController(StudentValidator studentValidator,
+                             StudentService studentService) {
+        this.studentValidator = studentValidator;
+        this.studentService   = studentService;
     }
 
+
     @GetMapping("/students")
-    public ResponseEntity<?> getStudents(
-            @RequestHeader(value = "Accept", required = false) String accept) {
+    public ResponseEntity<?> getStudents() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header("Content-Type", "application/json")
+                .body(studentService.getAll());
+    }
 
-        if (accept == null || accept.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("En-tête 'Accept' manquante");
-        }
 
+    @PostMapping("/students")
+    public ResponseEntity<?> createStudents(
+            @RequestBody List<Student> newStudents) {
         try {
-            if (accept.equals("text/plain")) {
-                String names = students.stream()
-                        .map(s -> s.getFirstName() + " " + s.getLastName())
-                        .collect(Collectors.joining(", "));
-                return ResponseEntity.ok()
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .body(names);
-            } else if (accept.equals("application/json")) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(students);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                        .body("Format non supporté");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur serveur");
+            studentValidator.validate(newStudents);
+            studentService.saveAll(newStudents);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header("Content-Type", "application/json")
+                    .body(studentService.getAll());
+
+        } catch (BadRequestException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .header("Content-Type", "text/plain")
+                    .body(e.getMessage());
         }
     }
 }
+
